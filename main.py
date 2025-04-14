@@ -7,9 +7,9 @@ from db_config import db_config
 from sql_utils import execute_and_compare
 
 # === 文件路径设置 ===
-INPUT_FILE = "/Users/apple/Desktop/实习/autotest-project/input_excel/cleaned_sql_overwrite.xlsx"
-OUTPUT_ALL = "/Users/apple/Desktop/实习/autotest-project/znws_compare_with_diff-0331-1.xlsx"
-OUTPUT_DIFF = "/Users/apple/Desktop/实习/autotest-project/znws_differences_only-0331-1.xlsx"
+INPUT_FILE = "/Users/apple/Desktop/实习/autotest-project/input_excel/32B-AWQ.xlsx"
+OUTPUT_ALL = "/Users/apple/Desktop/实习/autotest-project/znws_compare_with_32B-AWQ.xlsx"
+OUTPUT_DIFF = "/Users/apple/Desktop/实习/autotest-project/znws_differences_only_32B-AWQ.xlsx"
 
 # === 读取 Excel 数据 ===
 df = pd.read_excel(INPUT_FILE)
