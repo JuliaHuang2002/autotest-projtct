@@ -7,9 +7,9 @@ from db_config import db_config
 from sql_utils import execute_and_compare
 
 # === 文件路径设置 ===
-INPUT_FILE = "/Users/apple/Desktop/实习/autotest-project/input_excel/32B-AWQ.xlsx"
-OUTPUT_ALL = "/Users/apple/Desktop/实习/autotest-project/znws_compare_with_32B-AWQ.xlsx"
-OUTPUT_DIFF = "/Users/apple/Desktop/实习/autotest-project/znws_differences_only_32B-AWQ.xlsx"
+INPUT_FILE = "/Users/apple/Desktop/实习/autotest-project/input_excel/32B_instruct.xlsx"
+OUTPUT_ALL = "/Users/apple/Desktop/实习/autotest-project/znws_compare_with_32B_instruct.xlsx"
+OUTPUT_DIFF = "/Users/apple/Desktop/实习/autotest-project/znws_differences_only_32B_instruct.xlsx"
 
 # === 读取 Excel 数据 ===
 df = pd.read_excel(INPUT_FILE)
@@ -20,6 +20,7 @@ results = []
 diffs = []
 gt_results = []
 model_results = []
+structure_diffs = []
 
 
 # 建立数据库连接
@@ -32,15 +33,19 @@ for _, row in df.iterrows():
 
     if not gt_sql or not model_sql:
         labels.append(0)
-        results.append("")
+        gt_results.append("")
+        model_results.append("")
         diffs.append("SQL为空")
+        structure_diffs.append("")
         continue
 
-    label, gt_result, model_result, diff = execute_and_compare(gt_sql, model_sql, connection)
+    label, gt_result, model_result, diff, structure_diff = execute_and_compare(gt_sql, model_sql, connection)
+
     labels.append(label)
     gt_results.append(gt_result)
     model_results.append(model_result)
     diffs.append(diff)
+    structure_diffs.append(structure_diff)
 
 
 connection.close()
@@ -50,6 +55,8 @@ df["label"] = labels
 df["GT查询结果"] = gt_results
 df["模型查询结果"] = model_results
 df["差异信息"] = diffs
+df["语句比对"] = structure_diffs
+
 
 
 # 导出完整结果

@@ -53,15 +53,15 @@ def execute_and_compare(gt_sql, model_sql, connection):
             error_info.append("GT执行报错")
         if not model_ok:
             error_info.append("模型执行报错")
-        return 0, gt_result_str, model_result_str, "\n".join(error_info)
+        return 0, gt_result_str, model_result_str, "\n".join(error_info), ""
 
     # === 空结果 ===
     if gt_df.empty and model_df.empty:
-        return 0, gt_result_str, model_result_str, "查询结果皆为空"
+        return 0, gt_result_str, model_result_str, "查询结果皆为空", ""
     elif gt_df.empty:
-        return 0, gt_result_str, model_result_str, "GT结果为空"
+        return 0, gt_result_str, model_result_str, "GT结果为空", ""
     elif model_df.empty:
-        return 0, gt_result_str, model_result_str, "模型SQL结果为空"
+        return 0, gt_result_str, model_result_str, "模型SQL结果为空", ""
 
     # === 标准化字段名 ===
     gt_df.columns = normalize_columns(gt_df.columns)
@@ -69,7 +69,7 @@ def execute_and_compare(gt_sql, model_sql, connection):
 
     # === 完全一致 ===
     if structured_dataframe_equal(gt_df, model_df):
-        return 1, gt_result_str, model_result_str, ""
+        return 1, gt_result_str, model_result_str, "", ""
     
 
     # === 容忍判断：只有 date_time 缺失，其他字段和值都一致（label=1，说明能容忍）
@@ -80,7 +80,7 @@ def execute_and_compare(gt_sql, model_sql, connection):
             gt_trimmed = gt_df[gt_cols_minus_time].sort_values(by=gt_cols_minus_time).reset_index(drop=True)
             model_sorted = model_df[gt_cols_minus_time].sort_values(by=gt_cols_minus_time).reset_index(drop=True)
             if gt_trimmed.equals(model_sorted) and len(gt_df) == len(model_df):
-                return 1, gt_result_str, model_result_str, "时间缺失，其他一致"
+                return 1, gt_result_str, model_result_str, "时间缺失，其他一致", ""
 
 
     
@@ -92,7 +92,7 @@ def execute_and_compare(gt_sql, model_sql, connection):
             gt_sorted = gt_df[sorted(gt_df.columns)].reset_index(drop=True).astype(str)
             model_sorted = model_df[sorted(model_df.columns)].reset_index(drop=True).astype(str)
             if gt_sorted.equals(model_sorted):
-                return 1, gt_result_str, model_result_str, "字段类型不一致但值一致"
+                return 1, gt_result_str, model_result_str, "字段类型不一致但值一致", ""
         except Exception:
             pass
 
@@ -103,21 +103,20 @@ def execute_and_compare(gt_sql, model_sql, connection):
             shared_gt = gt_df[sorted(shared_fields)].reset_index(drop=True)
             shared_model = model_df[sorted(shared_fields)].reset_index(drop=True)
             if shared_gt.equals(shared_model):
-                return 0, gt_result_str, model_result_str, "指标一致，维度缺失"
-
-
+                return 0, gt_result_str, model_result_str, "指标一致，维度缺失", ""
+    
     # === fallback 开始 ===
     if set(gt_df.columns) != set(model_df.columns):
-        diff = compare_time_granularity(gt_sql, model_sql)
-        msg = diff if diff else f"字段不一致: GT列={list(gt_df.columns)}, Model列={list(model_df.columns)}"
-        return 0, gt_result_str, model_result_str, msg
+        structure_diff = compare_time_granularity(gt_sql, model_sql)
+        return 0, gt_result_str, model_result_str, f"字段不一致: GT列={list(gt_df.columns)}, Model列={list(model_df.columns)}", structure_diff
 
     if len(gt_df) != len(model_df):
-        diff = compare_time_granularity(gt_sql, model_sql)
-        msg = diff if diff else f"行数不一致: GT行数={len(gt_df)}, Model行数={len(model_df)}"
-        return 0, gt_result_str, model_result_str, msg
+        structure_diff = compare_time_granularity(gt_sql, model_sql)
+        return 0, gt_result_str, model_result_str, f"行数不一致: GT行数={len(gt_df)}, Model行数={len(model_df)}", structure_diff
 
     # fallback 最后一步
-    diff = compare_time_granularity(gt_sql, model_sql)
-    msg = diff if diff else "数据内容或顺序不一致"
-    return 0, gt_result_str, model_result_str, msg
+    structure_diff = compare_time_granularity(gt_sql, model_sql)
+    return 0, gt_result_str, model_result_str, "数据内容或顺序不一致", structure_diff
+
+
+    
